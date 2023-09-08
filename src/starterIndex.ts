@@ -1,8 +1,17 @@
-import { App, ItemView, Platform, Plugin, PluginSettingTab, Setting, WorkspaceLeaf } from 'obsidian';
+import {
+    App,
+    ItemView,
+    Platform,
+    Plugin,
+    PluginSettingTab,
+    Setting,
+    WorkspaceLeaf,
+} from "obsidian";
+import { createApp, type ComponentPublicInstance } from "vue";
 
-import DiceRoller from "./ui/DIceRoller.svelte";
+import DemoVue from "./ui/test.vue";
 
-const VIEW_TYPE = "svelte-view";
+const VIEW_TYPE = "vue-view";
 
 // Remember to rename these classes and interfaces!
 
@@ -11,12 +20,11 @@ interface MyPluginSettings {
 }
 
 const DEFAULT_SETTINGS: MyPluginSettings = {
-    mySetting: 'default'
-}
+    mySetting: "这是默认值",
+};
 
-
-class MySvelteView extends ItemView {
-    view: DiceRoller;
+class MyVueView extends ItemView {
+    view!: ComponentPublicInstance;
 
     getViewType(): string {
         return VIEW_TYPE;
@@ -31,33 +39,35 @@ class MySvelteView extends ItemView {
     }
 
     async onOpen(): Promise<void> {
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this.view = new DiceRoller({ target: (this as any).contentEl, props: {} });
+        const app = createApp(DemoVue).mount(this.contentEl);
+        this.view = app;
     }
 }
 
+// 核心
 export default class MyPlugin extends Plugin {
-    private view: MySvelteView;
-    settings: MyPluginSettings;
+    private view!: MyVueView;
+    settings!: MyPluginSettings;
 
     async onload() {
         await this.loadSettings();
 
         this.registerView(
             VIEW_TYPE,
-            (leaf: WorkspaceLeaf) => (this.view = new MySvelteView(leaf))
+            (leaf: WorkspaceLeaf) => (this.view = new MyVueView(leaf))
         );
 
         this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
 
         // This creates an icon in the left ribbon.
-        this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => this.openMapView());
+        this.addRibbonIcon("dice", "悬浮展示1", (evt: MouseEvent) =>
+            this.openMapView()
+        );
 
-        // This adds a simple command that can be triggered anywhere
+        // 在这里注册命令 This adds a simple command that can be triggered anywhere
         this.addCommand({
-            id: 'open-sample-modal-simple',
-            name: 'Open sample modal (simple)',
+            id: "xxx-id",
+            name: "注册命令中文名",
             callback: () => this.openMapView(),
         });
         // This adds a settings tab so the user can configure various aspects of the plugin
@@ -73,12 +83,14 @@ export default class MyPlugin extends Plugin {
         });
     }
 
-    onunload() {
-
-    }
+    onunload() {}
 
     async loadSettings() {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        this.settings = Object.assign(
+            {},
+            DEFAULT_SETTINGS,
+            await this.loadData()
+        );
     }
 
     async saveSettings() {
@@ -110,17 +122,19 @@ class SampleSettingTab extends PluginSettingTab {
 
         containerEl.empty();
 
-        containerEl.createEl('h2', { text: 'Settings for my awesome plugin.' });
+        containerEl.createEl("h2", { text: "这是一个 h2 标题" });
 
         new Setting(containerEl)
-            .setName('Setting #1')
-            .setDesc('It\'s a secret')
-            .addText(text => text
-                .setPlaceholder('Enter your secret')
-                .setValue(this.plugin.settings.mySetting)
-                .onChange(async (value) => {
-                    this.plugin.settings.mySetting = value;
-                    await this.plugin.saveSettings();
-                }));
+            .setName("label1")
+            .setDesc("desc1")
+            .addText((text) =>
+                text
+                    .setPlaceholder("默认暗文")
+                    .setValue(this.plugin.settings.mySetting)
+                    .onChange(async (value) => {
+                        this.plugin.settings.mySetting = value;
+                        await this.plugin.saveSettings();
+                    })
+            );
     }
 }

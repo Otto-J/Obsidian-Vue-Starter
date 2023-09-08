@@ -1,39 +1,40 @@
-import path from 'path';
-import { defineConfig } from 'vite';
-import { svelte } from '@sveltejs/vite-plugin-svelte';
-import autoPreprocess from 'svelte-preprocess';
-import builtins from 'builtin-modules';
+// import path from "path";
+import { defineConfig } from "vite";
+import builtins from "builtin-modules";
+import vue from "@vitejs/plugin-vue";
+import { fileURLToPath, URL } from "node:url";
+import process from "node:process";
 
-const prod = (process.argv[2] === 'production');
+const prod = process.argv[2] === "production";
 
 export default defineConfig(() => {
     return {
-        plugins: [
-            svelte({
-                preprocess: autoPreprocess()
-            })
-        ],
+        plugins: [vue()],
         watch: !prod,
         build: {
-            sourcemap: prod ? false : 'inline',
+            sourcemap: prod ? false : "inline",
             minify: prod,
             // Use Vite lib mode https://vitejs.dev/guide/build.html#library-mode
             commonjsOptions: {
                 ignoreTryCatch: false,
             },
             lib: {
-                entry: path.resolve(__dirname, './src/starterIndex.ts'),
-                formats: ['cjs'],
+                entry: fileURLToPath(
+                    new URL("./src/starterIndex.ts", import.meta.url)
+                ),
+                // entry: path.resolve(__dirname, "./src/starterIndex.ts"),
+                formats: ["cjs"],
             },
             css: {},
             rollupOptions: {
                 output: {
                     // Overwrite default Vite output fileName
-                    entryFileNames: 'main.js',
-                    assetFileNames: 'styles.css',
+                    entryFileNames: "main.js",
+                    assetFileNames: "styles.css",
                 },
-                external: ['obsidian',
-                    'electron',
+                external: [
+                    "obsidian",
+                    "electron",
                     "codemirror",
                     "@codemirror/autocomplete",
                     "@codemirror/closebrackets",
@@ -64,7 +65,7 @@ export default defineConfig(() => {
             },
             // Use root as the output dir
             emptyOutDir: false,
-            outDir: '.',
+            outDir: ".",
         },
-    }
+    };
 });

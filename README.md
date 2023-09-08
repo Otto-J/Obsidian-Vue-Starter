@@ -1,6 +1,6 @@
-# obsidian-svelte-starter
+# obsidian-vue-starter
 
-A starter template for creating an Obsidian plugin with SvelteJS.
+A starter template for creating an Obsidian plugin with Vue.
 
 # Features
 

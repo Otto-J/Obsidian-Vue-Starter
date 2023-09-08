@@ -5,9 +5,7 @@
     let result = 0;
 
     function randomNumber(min: number, max: number): number {
-        return Math.floor(
-            Math.random() * (max - min + 1) + min
-        )
+        return Math.floor(Math.random() * (max - min + 1) + min);
     }
 
     function rollDice(
@@ -25,33 +23,25 @@
 
         result = temp;
     }
-
-
 </script>
 
 <div>
-    <h1 class="H1">Dice Roller</h1>
-    <br>
+    <h1 class="H1">自由展示</h1>
+    <br />
     <div class="Dice-Roller-Container">
-        <input
-            type="number"
-            bind:value={diceSides}
-        />
+        <input type="number" bind:value={diceSides} />
         D
-        <input
-            type="number"
-            bind:value={numDice}
-        />
+        <input type="number" bind:value={numDice} />
         +
-        <input
-            type="number"
-            bind:value={modifier}
-        />
+        <input type="number" bind:value={modifier} />
     </div>
-    <br>
+    <br />
     <div class="Dice-Roller-Result">
         <span class="H4"> Result: {result} </span>
-        <button class="Dice-Roller-Button" on:click={()=> rollDice(numDice, diceSides, modifier)}>
+        <button
+            class="Dice-Roller-Button"
+            on:click={() => rollDice(numDice, diceSides, modifier)}
+        >
             Roll!
         </button>
     </div>
