@@ -1,15 +1,24 @@
 import {
   App,
   ItemView,
+  Modal,
   Platform,
   Plugin,
   PluginSettingTab,
-  Setting,
+  TFile,
+  TFolder,
   WorkspaceLeaf,
 } from "obsidian";
-import { createApp, type ComponentPublicInstance } from "vue";
+import {
+  createApp,
+  type ComponentPublicInstance,
+  type App as VueApp,
+} from "vue";
+import SettingsPage from "./ui/settings.vue";
+import ModalPage from "./ui/modal.vue";
 
 import DemoVue from "./ui/test.vue";
+import { useObsidianFrontmatter } from "./utils";
 
 const VIEW_TYPE = "vue-view";
 
@@ -51,35 +60,45 @@ export default class MyPlugin extends Plugin {
 
   async onload() {
     await this.loadSettings();
+    this.addSettingTab(new SampleSettingTab(this.app, this));
 
     this.registerView(
       VIEW_TYPE,
       (leaf: WorkspaceLeaf) => (this.view = new MyVueView(leaf))
     );
 
-    this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
+    this.registerEvent(
+      this.app.workspace.on("file-menu", (menu, file) => {
+        if (file instanceof TFolder) {
+          // 一定进不来，为了 ts 不报错
+          return;
+        }
+
+        if (file instanceof TFile) {
+          const isImg = ["png", "jpg", "jpeg", "gif", "webp"].includes(
+            file.extension
+          );
+
+          if (isImg) {
+            // 暂不处理
+          } else {
+            // nothing
+          }
+        }
+      })
+    );
 
     // This creates an icon in the left ribbon.
-    this.addRibbonIcon("dice", "悬浮展示1", (evt: MouseEvent) =>
-      this.openMapView()
-    );
+    this.addRibbonIcon("dice", "悬浮展示1", (evt: MouseEvent) => {
+      console.log(evt);
+      this.openMapView();
+    });
 
     // 在这里注册命令 This adds a simple command that can be triggered anywhere
     this.addCommand({
       id: "xxx-id",
       name: "注册命令中文名",
       callback: () => this.openMapView(),
-    });
-    // This adds a settings tab so the user can configure various aspects of the plugin
-    this.addSettingTab(new SampleSettingTab(this.app, this));
-  }
-
-  onLayoutReady(): void {
-    if (this.app.workspace.getLeavesOfType(VIEW_TYPE).length) {
-      return;
-    }
-    this.app.workspace.getRightLeaf(false).setViewState({
-      type: VIEW_TYPE,
     });
   }
 
@@ -105,32 +124,68 @@ export default class MyPlugin extends Plugin {
   }
 }
 
+/**
+ * 添加 设置面板
+ */
 class SampleSettingTab extends PluginSettingTab {
-  plugin: MyPlugin;
+  plugin: Plugin;
+  _vueApp: VueApp | undefined;
 
-  constructor(app: App, plugin: MyPlugin) {
+  constructor(app: App, plugin: Plugin) {
     super(app, plugin);
     this.plugin = plugin;
   }
 
   display(): void {
-    const { containerEl } = this;
+    const _app = createApp(SettingsPage, {
+      plugin: this.plugin,
+    });
+    this._vueApp = _app;
+    _app.mount(this.containerEl);
+  }
+  hide() {
+    if (this._vueApp) {
+      this._vueApp.unmount();
+    }
+    this.containerEl.empty();
+  }
+}
 
-    containerEl.empty();
+/**
+ * 第一次上传需要添加默认值
+ */
+export class MyPublishModal extends Modal {
+  _vueApp: VueApp | undefined;
+  plugin: Plugin;
 
-    containerEl.createEl("h2", { text: "这是一个 h2 标题" });
+  file: TFile;
 
-    new Setting(containerEl)
-      .setName("label1")
-      .setDesc("desc1")
-      .addText((text) =>
-        text
-          .setPlaceholder("默认暗文")
-          .setValue(this.plugin.settings.mySetting)
-          .onChange(async (value) => {
-            this.plugin.settings.mySetting = value;
-            await this.plugin.saveSettings();
-          })
-      );
+  constructor(app: App, plugin: Plugin, file: TFile) {
+    super(app);
+    this.plugin = plugin;
+    this.file = file;
+  }
+
+  onOpen() {
+    const { addOrUpdateFrontMatter, currentFrontMatter } =
+      useObsidianFrontmatter(this.file, this.app);
+
+    //  console.log("open设置面板", this.plugin);
+    const _app = createApp(ModalPage, {
+      plugin: this.plugin,
+      modal: this,
+      file: this.file,
+      addOrUpdateFrontMatter,
+      currentFrontMatter,
+    });
+    this._vueApp = _app;
+    _app.mount(this.containerEl);
+  }
+
+  onClose() {
+    if (this._vueApp) {
+      this._vueApp.unmount();
+    }
+    this.containerEl.empty();
   }
 }
