@@ -1,0 +1,40 @@
+name: Release Obsidian plugin
+
+# 手动触发
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8.8.0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+          cache: "pnpm"
+
+      - name: Build plugin
+        run: |
+          pnpm install
+          pnpm run build
+
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tags=$(git ls-remote --tags origin)
+          latest_tag=$(echo "$tags" | awk -F/ '{print $NF}' | sort -V | tail -n1)
+          echo "latest tag: $latest_tag"
+
+          zip -r dist.zip main.js manifest.json styles.css
+          gh release create "$latest_tag" --generate-notes main.js styles.css manifest.json dist.zip

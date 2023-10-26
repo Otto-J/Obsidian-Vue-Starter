@@ -14,17 +14,17 @@ import dotenvExpand from "dotenv-expand";
 const env = dotenv.config();
 dotenvExpand.expand(env);
 
-// const isWatch = process.argv[2] === "watch";
+const isWatch = process.argv.includes("--watch");
 
 export default defineConfig(({ command }) => {
-  const isProd = command === "build";
-
   return {
     plugins: [
       vue(),
       {
         name: "postbuild-commands",
         async closeBundle() {
+          if (!isWatch) return;
+
           if (!process.env.OB_PLUGIN_DIST) {
             console.log(
               "为了更好的开发体验，你可以在 .env 中配置 OB_PLUGIN_DIST"
@@ -44,6 +44,7 @@ export default defineConfig(({ command }) => {
             await copy("./main.js", dist),
             await copy("./styles.css", dist),
             await copy("./manifest.json", dist),
+            await copy("./.hotreload", dist),
           ]);
           console.log("复制结果到", dist);
         },
@@ -51,7 +52,7 @@ export default defineConfig(({ command }) => {
     ],
     build: {
       target: "esnext",
-      sourcemap: false,
+      sourcemap: isWatch ? "inline" : false,
       commonjsOptions: {
         ignoreTryCatch: false,
       },
@@ -63,8 +64,8 @@ export default defineConfig(({ command }) => {
       rollupOptions: {
         output: {
           entryFileNames: "main.js",
-          exports: "named",
           assetFileNames: "styles.css",
+          exports: "named",
         },
         external: [
           "obsidian",
@@ -100,6 +101,11 @@ export default defineConfig(({ command }) => {
       // Use root as the output dir
       emptyOutDir: false,
       outDir: ".",
+    },
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "src"),
+      },
     },
   };
 });

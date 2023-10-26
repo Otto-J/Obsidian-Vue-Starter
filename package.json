@@ -9,7 +9,7 @@
     "dev": "npm run lint && vite build --watch",
     "build": "npm run type-check && vite build",
     "format": "prettier --write src/",
-    "bumpversion": "node version-bump.mjs && git add manifest.json versions.json"
+    "updateVersion": "tsx scripts/updateVersion.ts"
   },
   "keywords": [],
   "author": "Otto",
@@ -28,6 +28,7 @@
     "dotenv-expand": "^10.0.0",
     "eslint": "^8.52.0",
     "eslint-plugin-vue": "^9.17.0",
+    "inquirer": "^9.2.11",
     "obsidian": "latest",
     "prettier": "^2.8.8",
     "tslib": "2.4.0",
