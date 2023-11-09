@@ -1,28 +1,7 @@
-import {
-  App,
-  ItemView,
-  Modal,
-  Platform,
-  Plugin,
-  PluginSettingTab,
-  TFile,
-  TFolder,
-  WorkspaceLeaf,
-} from "obsidian";
-import {
-  createApp,
-  type ComponentPublicInstance,
-  type App as VueApp,
-} from "vue";
+import { App, Modal, Notice, Plugin, PluginSettingTab, TFile } from "obsidian";
+import { createApp, type App as VueApp } from "vue";
 import SettingsPage from "./ui/settings.vue";
 import ModalPage from "./ui/modal.vue";
-
-import DemoVue from "./ui/test.vue";
-import { useObsidianFrontmatter } from "./utils";
-
-const VIEW_TYPE = "vue-view";
-
-// Remember to rename these classes and interfaces!
 
 interface MyPluginSettings {
   mySetting: string;
@@ -32,73 +11,37 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
   mySetting: "这是默认值",
 };
 
-class MyVueView extends ItemView {
-  view!: ComponentPublicInstance;
-
-  getViewType(): string {
-    return VIEW_TYPE;
-  }
-
-  getDisplayText(): string {
-    return "Dice Roller";
-  }
-
-  getIcon(): string {
-    return "dice";
-  }
-
-  async onOpen(): Promise<void> {
-    const app = createApp(DemoVue).mount(this.contentEl);
-    this.view = app;
-  }
-}
-
 // 核心
 export default class MyPlugin extends Plugin {
-  private view!: MyVueView;
   settings!: MyPluginSettings;
 
   async onload() {
     await this.loadSettings();
     this.addSettingTab(new SampleSettingTab(this.app, this));
 
-    this.registerView(
-      VIEW_TYPE,
-      (leaf: WorkspaceLeaf) => (this.view = new MyVueView(leaf))
-    );
-
     this.registerEvent(
       this.app.workspace.on("file-menu", (menu, file) => {
-        if (file instanceof TFolder) {
-          // 一定进不来，为了 ts 不报错
-          return;
-        }
+        const isFile = file instanceof TFile;
+        if (!isFile) return;
 
-        if (file instanceof TFile) {
-          const isImg = ["png", "jpg", "jpeg", "gif", "webp"].includes(
-            file.extension
-          );
-
-          if (isImg) {
-            // 暂不处理
-          } else {
-            // nothing
-          }
-        }
+        const isMD = (file.extension ?? "").toLocaleLowerCase() === "md";
+        if (!isMD) return;
+        new Notice("文件菜单");
       })
     );
 
-    // This creates an icon in the left ribbon.
     this.addRibbonIcon("dice", "悬浮展示1", (evt: MouseEvent) => {
       console.log(evt);
-      this.openMapView();
+      // this.openMapView();
     });
 
     // 在这里注册命令 This adds a simple command that can be triggered anywhere
     this.addCommand({
       id: "xxx-id",
       name: "注册命令中文名",
-      callback: () => this.openMapView(),
+      callback: () => {
+        new Notice("注册命令");
+      },
     });
   }
 
@@ -110,17 +53,6 @@ export default class MyPlugin extends Plugin {
 
   async saveSettings() {
     await this.saveData(this.settings);
-  }
-
-  async openMapView() {
-    const workspace = this.app.workspace;
-    workspace.detachLeavesOfType(VIEW_TYPE);
-    const leaf = workspace.getLeaf(
-      // @ts-ignore
-      !Platform.isMobile
-    );
-    await leaf.setViewState({ type: VIEW_TYPE });
-    workspace.revealLeaf(leaf);
   }
 }
 
@@ -167,16 +99,10 @@ export class MyPublishModal extends Modal {
   }
 
   onOpen() {
-    const { addOrUpdateFrontMatter, currentFrontMatter } =
-      useObsidianFrontmatter(this.file, this.app);
-
-    //  console.log("open设置面板", this.plugin);
     const _app = createApp(ModalPage, {
       plugin: this.plugin,
       modal: this,
       file: this.file,
-      addOrUpdateFrontMatter,
-      currentFrontMatter,
     });
     this._vueApp = _app;
     _app.mount(this.containerEl);

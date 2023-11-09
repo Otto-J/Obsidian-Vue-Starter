@@ -17,7 +17,7 @@ async function syncManifest() {
     ...info,
   };
 
-  fsPromise.writeFile(
+  await fsPromise.writeFile(
     "./manifest.json",
     JSON.stringify(newManifest, null, 2) + "\n"
   );
@@ -82,7 +82,7 @@ async function main() {
     },
   ]);
   if (isTag) {
-    exec(`git tag v${pkg.version}`, (err, stdout, stderr) => {
+    exec(`git tag ${pkg.version}`, (err, stdout, stderr) => {
       if (err) {
         console.log(err);
         process.exit(1);
